@@ -335,6 +335,18 @@ export default function Game2048() {
     }
   }
 
+  const disconnectWallet = () => {
+    setWallet({
+      isConnected: false,
+      address: null,
+      balance: "0.0000",
+      network: "Intuition Testnet",
+    })
+    // Reset game state when disconnecting
+    resetGame()
+    console.log("[v0] Wallet disconnected")
+  }
+
   function resetGame() {
     setBoard(initializeBoard())
     setScore(0)
@@ -370,6 +382,16 @@ export default function Game2048() {
                 </div>
                 <div className="flex items-center justify-center gap-2">
                   <div className="text-lg font-bold text-white">{wallet.balance} TRUST</div>
+                </div>
+                <div className="mt-3">
+                  <Button
+                    onClick={disconnectWallet}
+                    variant="outline"
+                    size="sm"
+                    className="text-xs bg-transparent border-gray-600 text-gray-400 hover:text-white"
+                  >
+                    Disconnect Wallet
+                  </Button>
                 </div>
               </div>
             </Card>
