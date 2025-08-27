@@ -141,6 +141,7 @@ export default function Game2048() {
   )
 
   const handleTouchStart = (e: React.TouchEvent) => {
+    e.preventDefault()
     setTouchEnd(null)
     setTouchStart({
       x: e.targetTouches[0].clientX,
@@ -149,13 +150,15 @@ export default function Game2048() {
   }
 
   const handleTouchMove = (e: React.TouchEvent) => {
+    e.preventDefault()
     setTouchEnd({
       x: e.targetTouches[0].clientX,
       y: e.targetTouches[0].clientY,
     })
   }
 
-  const handleTouchEnd = async () => {
+  const handleTouchEnd = async (e: React.TouchEvent) => {
+    e.preventDefault()
     if (!touchStart || !touchEnd) return
 
     const distanceX = touchStart.x - touchEnd.x
