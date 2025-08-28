@@ -198,11 +198,53 @@ export default function Game2048() {
         return
       }
 
+      try {
+        await window.ethereum.request({
+          method: "wallet_switchEthereumChain",
+          params: [{ chainId: "0x350b" }], // 13579 in hex
+        })
+      } catch (switchError: any) {
+        if (switchError.code === 4902) {
+          try {
+            await window.ethereum.request({
+              method: "wallet_addEthereumChain",
+              params: [
+                {
+                  chainId: "0x350b",
+                  chainName: "Intuition Testnet",
+                  nativeCurrency: {
+                    name: "tTRUST",
+                    symbol: "tTRUST",
+                    decimals: 18,
+                  },
+                  rpcUrls: ["https://testnet.rpc.intuition.systems/"],
+                  blockExplorerUrls: ["https://testnet.rpc.intuition.systems/"],
+                },
+              ],
+            })
+          } catch (addError) {
+            console.error("[v0] Failed to add Intuition network:", addError)
+            alert("Please manually add Intuition Testnet to your wallet to play this game.")
+            return
+          }
+        } else {
+          console.error("[v0] Failed to switch to Intuition network:", switchError)
+          alert("Please switch to Intuition Testnet in your wallet to play this game.")
+          return
+        }
+      }
+
       const accounts = await window.ethereum.request({
         method: "eth_requestAccounts",
       })
 
       if (accounts.length > 0) {
+        const chainId = await window.ethereum.request({ method: "eth_chainId" })
+        if (chainId !== "0x350b") {
+          alert("Please switch to Intuition Testnet to play this game.")
+          return
+        }
+
         const balance = await fetchCurrentBalance(accounts[0])
 
         setWallet({
@@ -212,11 +254,11 @@ export default function Game2048() {
           network: "Intuition Testnet",
         })
 
-        console.log("[v0] Wallet connected:", accounts[0])
+        console.log("[v0] Wallet connected to Intuition Testnet:", accounts[0])
       }
     } catch (error) {
       console.error("[v0] Wallet connection failed:", error)
-      alert("Failed to connect wallet")
+      alert("Failed to connect wallet. Please ensure you're using Intuition Testnet.")
     }
   }
 
@@ -243,11 +285,21 @@ export default function Game2048() {
   }
 
   useEffect(() => {
-    if (wallet.isConnected && wallet.address) {
-      const interval = setInterval(refreshBalance, 30000) // Refresh every 30 seconds
-      return () => clearInterval(interval)
+    if (window.ethereum && wallet.isConnected) {
+      const handleChainChanged = (chainId: string) => {
+        if (chainId !== "0x350b") {
+          alert("This game only works on Intuition Testnet. Please switch back to continue playing.")
+          disconnectWallet()
+        }
+      }
+
+      window.ethereum.on("chainChanged", handleChainChanged)
+
+      return () => {
+        window.ethereum.removeListener("chainChanged", handleChainChanged)
+      }
     }
-  }, [wallet.isConnected, wallet.address])
+  }, [wallet.isConnected])
 
   const submitBatchToBlockchain = async (batchMoves: GameTransaction[]) => {
     try {
@@ -433,10 +485,16 @@ export default function Game2048() {
 
             <Card className="p-4 mb-4 bg-gray-800 border-gray-700">
               <div
-                className="grid grid-cols-4 gap-2"
+                className="grid grid-cols-4 gap-2 game-board"
                 onTouchStart={handleTouchStart}
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEnd}
+                style={{
+                  touchAction: "none",
+                  WebkitTouchCallout: "none",
+                  WebkitUserSelect: "none",
+                  userSelect: "none",
+                }}
               >
                 {board.flat().map((cell, index) => (
                   <div
