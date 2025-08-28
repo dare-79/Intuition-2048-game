@@ -40,6 +40,7 @@ export default function Game2048() {
   const [board, setBoard] = useState<Board>(() => initializeBoard())
   const [score, setScore] = useState(0)
   const [bestScore, setBestScore] = useState(0)
+  const [lastScore, setLastScore] = useState(0)
   const [gameOver, setGameOver] = useState(false)
   const [won, setWon] = useState(false)
   const [transactions, setTransactions] = useState<GameTransaction[]>([])
@@ -56,6 +57,27 @@ export default function Game2048() {
 
   const [touchStart, setTouchStart] = useState<{ x: number; y: number } | null>(null)
   const [touchEnd, setTouchEnd] = useState<{ x: number; y: number } | null>(null)
+
+  useEffect(() => {
+    const savedBestScore = localStorage.getItem("2048-best-score")
+    const savedLastScore = localStorage.getItem("2048-last-score")
+
+    if (savedBestScore) {
+      setBestScore(Number.parseInt(savedBestScore, 10))
+    }
+    if (savedLastScore) {
+      setLastScore(Number.parseInt(savedLastScore, 10))
+    }
+  }, [])
+
+  useEffect(() => {
+    if (score > bestScore) {
+      setBestScore(score)
+      localStorage.setItem("2048-best-score", score.toString())
+    }
+    localStorage.setItem("2048-last-score", score.toString())
+    setLastScore(score)
+  }, [score, bestScore])
 
   const handleMove = useCallback(
     async (direction: Direction) => {
@@ -461,8 +483,8 @@ export default function Game2048() {
                 <div className="text-xl font-bold text-white">{bestScore}</div>
               </Card>
               <Card className="px-4 py-2 bg-gray-800 border-gray-700">
-                <div className="text-sm text-gray-400">Moves</div>
-                <div className="text-xl font-bold text-white">{transactions.length}</div>
+                <div className="text-sm text-gray-400">Last</div>
+                <div className="text-xl font-bold text-white">{lastScore}</div>
               </Card>
             </div>
 
